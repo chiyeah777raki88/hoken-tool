@@ -815,7 +815,20 @@ CGROUPS.forEach(function(g){
 var gd=el("div","cgrp"),gt=el("div","cgtitle",g.t);gd.appendChild(gt);
 var ff=el("div","cfields");
 g.fs.forEach(function(f){
-var rv=draft[f],dv=rv===null||rv===undefined?"":Array.isArray(rv)?JSON.stringify(rv).slice(0,60):rv===true?"あり":rv===false?"なし":String(rv);
+var rv=draft[f],dv;
+if(rv===null||rv===undefined){dv="";}
+else if(Array.isArray(rv)){
+  if(rv.length===0){dv="";}
+  else if(f==="futureVals"){
+    // 将来予測（返戻金表）：年齢と3%値を分かりやすく
+    dv=rv.length+"件 → "+rv.map(function(r){return (r.age||"?")+"歳:"+(r.v3||r.v1||r.v5||r.v6||0);}).join(" / ");
+  }else if(f==="renewalRates"){
+    dv=rv.length+"件 → "+rv.map(function(r){return (r.age||"?")+"歳:"+(r.prem||0);}).join(" / ");
+  }else{dv=rv.length+"件";}
+}
+else if(rv===true){dv="あり";}
+else if(rv===false){dv="なし";}
+else{dv=String(rv);}
 var hi=g.hi.indexOf(f)>=0;
 var fd=el("div","cf"+(hi?" hi":""));
 var lb=el("label");lb.textContent=FLBLS[f]||f;

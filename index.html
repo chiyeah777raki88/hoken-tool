@@ -486,6 +486,9 @@ var assetsData={savings:0,realestate:0,stocks:0,other:0,mortgage:0,mortgageYrs:0
 var nisaAccounts=[],idecoAccounts=[],extraRows=[],drawEvents=[];
 var scenRate="3",evalAge=65,drawRate=2;
 var assetMember="all"; // 資産シミュレーションの表示対象: all=合算 / 本人 / 配偶者ID
+// 保険種類別の想定利率（％）。"scenario"＝運用シナリオ連動（変額系）。貯蓄性のない種類は0。
+var RATE_DEFAULT={"終身保険":1.5,"定期保険":0,"変額定期保険":"scenario","収入保障保険":0,"逓減定期保険":0,"養老保険":1.5,"変額終身保険":"scenario","変額養老保険":"scenario","医療保険":0,"がん保険":0,"3大疾病保険":0,"就業不能保険":0,"介護保険":0,"個人年金保険":3,"学資保険":1,"変額年金保険":"scenario","ドル建て災害終身保険":2.5,"総合保険（複合型）":1.5,"その他":1.5};
+var rateByType=JSON.parse(JSON.stringify(RATE_DEFAULT));
 var CAM_FIELDS=["company","insType","policyNo","insuredName","contractDate","deathType","dlAmount","dlPeriodType","dlPeriodEnd","dlPayType","dlPayEnd","hospDaily","hospLimit","hospLumpIn","hospLumpOut","surgInp","surgOut","outType","outAmount","injuryAmount","cancerOn","c1st","c2nd","cCond","cancerHosp","cancerSurg","cancerOut2","advancedMedical","advancedMedicalAmount","bigOn","bigCount","h1st","b1st","hCond","bCond","heartType","brainType","disType","disMonthly","disPayLimit","careType","careLump","careMonthly","careLevel","premUnit","premAmount","premExempt","premExemptAmount","premExemptType","premExemptDetail","currentVal","futureVals","futureValAge","annualPension","pensionStartAge","pensionYears","currency","exchangeRate","refundVal","refundAge","renewalRates","contractEndsOnClaim","notes"];
 var currentCustomerId=storageGet("kudo_current_customer")||"kudo";
 function getCustomerKey(){return "ins_customer_"+currentCustomerId;}
@@ -516,7 +519,7 @@ if(sv.extraRows){extraRows.splice(0,extraRows.length);sv.extraRows.forEach(funct
 if(sv.evalAge)evalAge=sv.evalAge;
 if(sv.drawRate)drawRate=sv.drawRate;
 if(sv.drawEvents){drawEvents.splice(0,drawEvents.length);sv.drawEvents.forEach(function(e){drawEvents.push(e);});}
-if(sv.scenRate)scenRate=sv.scenRate;
+if(sv.scenRate)scenRate=sv.scenRate;if(sv.rateByType)rateByType=Object.assign(JSON.parse(JSON.stringify(RATE_DEFAULT)),sv.rateByType);
 if(sv.famSave&&Array.isArray(sv.famSave)&&sv.famSave.length>0){base.family=sv.famSave;base.policies={};base.family.forEach(function(m){base.policies[m.id]=[];});}
 if(sv.polSave){base.family.forEach(function(m){if(sv.polSave[m.id]&&sv.polSave[m.id].length>0)base.policies[m.id]=sv.polSave[m.id];});}
 if(sv.bigMatrixData)base.bigMatrixData=sv.bigMatrixData;
@@ -533,7 +536,7 @@ function saveState(){
 try{var si=document.getElementById("save-ind");if(si){si.textContent="● 保存済";si.style.color="#27ae60";}}catch(e){} window._lastSaved=Date.now();
 try{
 var ps={};state.family.forEach(function(m){ps[m.id]=(state.policies[m.id]||[]).map(function(p){return JSON.parse(JSON.stringify(p));});});
-storageSet(getCustomerKey(),JSON.stringify({ansinLine:state.ansinLine,goals:state.goals||[],proposalPolicies:state.proposalPolicies,comparisonRows:state.comparisonRows,comparisonMemos:state.comparisonMemos||{},assets:assetsData,nisaAccounts:nisaAccounts,idecoAccounts:idecoAccounts,extraRows:extraRows,evalAge:evalAge,drawRate:drawRate,drawEvents:drawEvents,scenRate:scenRate,polSave:ps,famSave:state.family,bigMatrixData:state.bigMatrixData||{},bigMatrixRowLabels:state.bigMatrixRowLabels||{},bigMatrixCells:state.bigMatrixCells||{},bigMatrixExemptCells:state.bigMatrixExemptCells||{},bigMatrixOverrides:state.bigMatrixOverrides||{}}));
+storageSet(getCustomerKey(),JSON.stringify({ansinLine:state.ansinLine,goals:state.goals||[],proposalPolicies:state.proposalPolicies,comparisonRows:state.comparisonRows,comparisonMemos:state.comparisonMemos||{},assets:assetsData,nisaAccounts:nisaAccounts,idecoAccounts:idecoAccounts,extraRows:extraRows,evalAge:evalAge,drawRate:drawRate,drawEvents:drawEvents,scenRate:scenRate,rateByType:rateByType,polSave:ps,famSave:state.family,bigMatrixData:state.bigMatrixData||{},bigMatrixRowLabels:state.bigMatrixRowLabels||{},bigMatrixCells:state.bigMatrixCells||{},bigMatrixExemptCells:state.bigMatrixExemptCells||{},bigMatrixOverrides:state.bigMatrixOverrides||{}}));
 }catch(e){}
 // Save customer list to localStorage first
 try{var cl2=listCustomers();if(cl2.length)saveCustomerList(cl2);}catch(e){}
@@ -619,6 +622,15 @@ function toJPY(p,amt){
 if(!amt)return 0;
 if(p.currency&&p.currency!=="JPY")return Math.round(amt*(p.exchangeRate||150)/10000*100)/100;
 return amt;
+}
+function scenNum(){return scenRate==="6"?6:scenRate==="5"?5:scenRate==="4"?4:scenRate==="1"?1:3;}
+function rateForPolicy(p){
+  // 変額系は運用シナリオ連動。それ以外は保険種類別の固定利率。
+  var t=p.insType||"";
+  if(t.indexOf("変額")>=0)return scenNum();
+  var r=(rateByType&&rateByType[t]!==undefined)?rateByType[t]:(RATE_DEFAULT[t]!==undefined?RATE_DEFAULT[t]:1.5);
+  if(r==="scenario")return scenNum();
+  return +r||0;
 }
 function fvCalc(b,m,r,y){var rate=r/100/12,n=y*12;if(rate===0)return Math.round((b*10000+m*n)/10000);return Math.round((b*10000*Math.pow(1+rate,n)+m*((Math.pow(1+rate,n)-1)/rate))/10000);}
 function el(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cls;if(txt!==undefined)e.textContent=txt;return e;}
@@ -1432,6 +1444,42 @@ if(state.family.length>=2){
   });
   memDiv.appendChild(mBtns);cont.appendChild(memDiv);
 }
+// 保険種類別 想定利率の設定（折りたたみ）
+(function(){
+  // この顧客が実際に持っている保険種類だけ表示（無駄を省く）
+  var typesUsed={};aPs().forEach(function(x){if(x.policy.insType)typesUsed[x.policy.insType]=true;});
+  var typeList=Object.keys(typesUsed);
+  if(typeList.length===0)return;
+  var wrap=el("div");wrap.style.cssText="background:white;border-radius:8px;border:1px solid #ddd8cc;margin-bottom:12px;overflow:hidden;";
+  var head=el("div");head.style.cssText="padding:12px 14px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:700;color:#1a2744;";
+  head.innerHTML="<span>保険種類別 想定利率の設定（年金・貯蓄性保険）</span><span style='font-size:11px;color:#8a8a8a;'>▼ 開く</span>";
+  var body=el("div");body.style.cssText="padding:0 14px 12px;display:none;";
+  var note=el("p");note.style.cssText="font-size:11px;color:#8a8a8a;margin:4px 0 10px;";
+  note.textContent="利率変動型・定額の年金や終身は、株式の運用シナリオではなく、ここで決めた利率で積み立てを計算します。変額系は運用シナリオに連動します。";
+  body.appendChild(note);
+  typeList.forEach(function(t){
+    var isVar=t.indexOf("変額")>=0;
+    var row=el("div");row.style.cssText="display:flex;align-items:center;gap:10px;margin-bottom:7px;";
+    var lab=el("span");lab.textContent=t;lab.style.cssText="font-size:12px;color:#1a2744;width:180px;";
+    row.appendChild(lab);
+    if(isVar){
+      var s=el("span");s.textContent="運用シナリオに連動";s.style.cssText="font-size:12px;color:#7c3aed;font-weight:600;";
+      row.appendChild(s);
+    }else{
+      var cur=(rateByType[t]!==undefined&&rateByType[t]!=="scenario")?rateByType[t]:(RATE_DEFAULT[t]!==undefined&&RATE_DEFAULT[t]!=="scenario"?RATE_DEFAULT[t]:1.5);
+      var inb=document.createElement("input");inb.type="number";inb.step="0.1";inb.value=cur;
+      inb.style.cssText="width:80px;padding:5px;border:1px solid #ccc;border-radius:4px;font-size:13px;text-align:right;";
+      inb.addEventListener("input",function(){rateByType[t]=(this.value===""?0:+this.value);});
+      inb.addEventListener("change",function(){saveState();render();});
+      row.appendChild(inb);
+      var pct=el("span");pct.textContent="％";pct.style.cssText="font-size:12px;color:#8a8a8a;";row.appendChild(pct);
+    }
+    body.appendChild(row);
+  });
+  var open=false;
+  head.addEventListener("click",function(){open=!open;body.style.display=open?"block":"none";head.querySelector("span:last-child").textContent=open?"▲ 閉じる":"▼ 開く";});
+  wrap.appendChild(head);wrap.appendChild(body);cont.appendChild(wrap);
+})();
 var pProjs=aPs().filter(function(x){
   // 表示対象フィルタ（合算以外なら、その家族メンバーの証券だけ）
   if(assetMember!=="all"&&x.member.id!==assetMember)return false;
@@ -1671,7 +1719,7 @@ var payEnd=p.dlPayEnd>0?p.dlPayEnd:(p.pensionStartAge||65);
 if(isPension){
 if(ag<p.pensionStartAge){
 var curV=p.currentVal||0;var yrs=ag-curAge;
-var rrP=scenRate==="6"?6:scenRate==="5"?5:scenRate==="4"?4:scenRate==="1"?1:3;
+var rrP=rateForPolicy(p);
 insV[p.id]=Math.round(fvCalc(curV,toM(p),rrP,yrs));
 } else {
 var endAge=p.pensionYears>0?p.pensionStartAge+p.pensionYears:999;
@@ -1763,7 +1811,7 @@ var pEnd=p.dlPeriodType==="終身"?120:(p.dlPeriodEnd>0?p.dlPeriodEnd:120);
 if(ag>pEnd){row[polLabel(p)]=0;return;}
 var v=Math.round(insV[p.id])||0;
 // Fallback: only if no specific asset value is defined
-if(v===0&&ag<=pEnd&&!(p.refundVal>0&&p.refundAge>0)){var pm2b=+toM(p);if(pm2b>0&&pm2b<=500000){var futYrs=Math.max(0,ag-curAge);var rrb=scenRate==="6"?6:scenRate==="4"?4:3;var bvb=p.currentVal||0;v=Math.round(fvCalc(bvb,pm2b,rrb,futYrs));}}
+if(v===0&&ag<=pEnd&&!(p.refundVal>0&&p.refundAge>0)){var pm2b=+toM(p);if(pm2b>0&&pm2b<=500000){var futYrs=Math.max(0,ag-curAge);var rrb=rateForPolicy(p);var bvb=p.currentVal||0;v=Math.round(fvCalc(bvb,pm2b,rrb,futYrs));}}
 row[polLabel(p)]=v||0;
 });
 return row;

@@ -461,7 +461,7 @@ var ET={none:"なし",cancer:"悪性新生物（がん）",cancer_jhi:"上皮内
 var CPROMPT="保険証券・設計書の画像から情報をJSONで正確に抽出してください。\n\n【重要ルール】\n1. JSONのみ返す（説明文不要）\n2. 見つからない項目はnull\n3. 金額は万円単位の数値（例:500万円→500）\n4. 先進医療特約の金額はadvancedMedicalAmountに入れる（c1stに入れない）\n5. がん診断給付金のみc1stに入れる\n6. 会社名は正確に読み取る\n\n【読み取り精度の厳守事項】\nA. 数字は1文字ずつ慎重に読む。0と6と8、1と7、3と8を取り違えないこと。\nB. 金額の単位を必ず確認する。「円」と「万円」「千円」を混同しない。日額は円、保険金や給付金は万円で記入する。\nC. はっきり読めない文字・数字は推測で埋めず、その項目はnullにする。\nD. 証券番号は記号・ハイフン・「第〜号」も含めて原文のまま正確に写す。\nE. 複数ページや表がある場合は全ページを突き合わせ、最新・正式な数値を優先する。\nF. チェック欄や特約あり/なしの表示を見て、true/falseを正しく判定する。空欄や取消線は付帯なしとみなす。\n\n【フィールド一覧】\ncompany:保険会社名（例:第一ネオ生命・SOMPOひまわり生命等）\ninsType:保険種類（医療保険/がん保険/終身保険/定期保険/変額終身保険/個人年金保険等）\npolicyNo:証券番号\ninsuredName:被保険者名（保障の対象者。契約者と別の場合に記載。同じか不明ならnull）\ncontractDate:契約日YYYY-MM-DD\ndeathType:死亡保障タイプ none/lump/annuity/both\ndlAmount:死亡保険金（万円）\ndlPeriodType:保険期間 終身/歳満了/年更新/更新後終身\ndlPeriodEnd:満了年齢または更新終了年齢\ndlPayType:払込期間 終身払/60歳払済/65歳払済/70歳払済/更新型/保険期間と同じ\ndlPayEnd:払込満了年齢\nhospDaily:入院日額（円）\nhospLimit:入院支払限度（例:60日/120日/無制限）\nhospLumpIn:入院一時金（万円）※入院した時に一時金として支払われるもの\nhospLumpOut:退院一時金（万円）※退院時に支払われるもの\nsurgInp:手術給付金・入院時（万円または入院日額の倍率を記載）\nadvancedMedical:先進医療特約 true/false\nadvancedMedicalAmount:先進医療給付金の上限（万円）\ncancerOn:がん特約 true/false\nc1st:がん診断給付金1回目（万円）※がんと診断された時の一時金のみ\nc2nd:がん診断給付金2回目以降（万円）\ncancerHosp:がん入院日額（円）\ncancerSurg:がん手術給付金（万円）\ncancerOut:がん通院日額（円）\nbigOn:3大疾病/8大疾病特約 true/false\nbigCount:3大疾病/7大疾病/8大疾病\nh1st:心疾患給付金（万円）\nhCond:心疾患要件 A:60日所定/B:入院10日以上/C:1泊入院\nb1st:脳血管疾患給付金（万円）\nbCond:脳血管要件 A:60日所定/B:入院10日以上/C:1泊入院\ndisType:就業不能 none/lump/monthly/both\ndisMonthly:就業不能月額（万円）\ncareType:介護 none/lump/monthly/both\ncareLump:介護一時金（万円）\ncareMonthly:介護月額（万円）\noutType:通院特約 none/daily/monthly（通院給付金があればdaily、月額ならmonthly）\noutAmount:通院給付金の日額または月額（円。通院日額5000円ならoutType=daily,outAmount=5000）\nsurgOut:外来手術給付金（万円）\ninjuryAmount:傷害・ケガ給付金（万円）\npremUnit:払込方法 円/月または円/年\npremAmount:保険料数値\npremExemptType:免除条件 none/cancer/3big/5big/8big/dis/care/death/multi\npremExemptDetail:免除条件の詳細説明\ncurrentVal:現在の積立金額（万円）\nfutureVals:将来予測テーブル配列（各要素:{age:年齢,v1:最低保証,v3:3%,v5:5%,v6:6%}）\nannualPension:年金年額（外貨は原通貨の数値）\npensionStartAge:年金開始年齢\npensionYears:受取期間年\ncurrency:通貨 JPY/USD/EUR/AUD\nexchangeRate:為替レート\nrefundVal:生存還付金（万円）\nrefundAge:還付金受取年齢\nrenewals:更新後保険料テーブル配列（各要素:{age:年齢,prem:月額保険料}）\nnotes:対応する項目があるものは必ずその項目へ。notesには対応項目の無い事項だけ簡潔に書く。\n\n【特約の振り分け（最重要）】通院給付金→outType/outAmount、先進医療→advancedMedical/advancedMedicalAmount、入院一時金→hospLumpIn、がん→cancer系、のように必ず対応項目に入れる。特約内容をnotesに長々と書かないこと。";
 function mkP(id){return {id:id||Date.now(),company:"",insType:"",policyNo:"",contractDate:"",deathType:"none",dlAmount:0,dlPeriodType:"終身",dlPeriodEnd:0,dlPayType:"終身払",dlPayEnd:0,hospDaily:0,hospLimit:"60日",hospLumpIn:0,hospLumpOut:0,surgInp:0,surgOut:0,surgType:"fixed",surgInpMult:"10",surgOutMult:"0",surgMemo:"",hospMemo:"",outMemo:"",outType:"none",outAmount:0,cancerOn:false,c1st:0,c2nd:0,cCond:"A",cancerTimes:"unlimited",cancerInterval:"180",cancerSecond:"same",cancerSecondReq:"outpatient",cancerHosp:0,cancerSurg:0,cancerOut2:0,cancerMonthly:0,cancerMonthlyPeriod:"none",cancerMonthlyTarget:"all",cancerMonthlyMemo:"",cancerContinue:false,cancerContinueAmount:0,cancerContinueType:"annual",cancerContinueMemo:"",advancedMedical:false,advancedMedicalAmount:0,bigOn:false,bigCount:"3大疾病",
 h1st:0,heartType:"heart",hCond:"A",heartPayReq:"hospital",heartTimes:"1",heartInterval:"180",heartSecond:"same",heartMemo:"",
-b1st:0,brainType:"brain",bCond:"A",brainPayReq:"hospital",brainTimes:"1",brainInterval:"180",brainSecond:"same",brainMemo:"",disType:"none",disLump:0,disMonthly:0,disPayLimit:0,disMinGuarantee:0,disScope:"5big",careType:"none",careLump:0,careMonthly:0,careLevel:"要介護2以上",carePayLimit:0,careMinGuarantee:0,injuryAmount:0,premUnit:"円/月",premAmount:0,premExempt:false,premExemptAmount:0,premExemptType:"none",premExemptDetail:"",exemptMemo:"",currentVal:0,futureVals:[],futureVal1:0,futureVal3:0,futureVal5:0,futureVal6:0,futureValAge:0,futureValNote:"",annualPension:0,pensionStartAge:0,pensionYears:0,currency:"JPY",exchangeRate:150,refundVal:0,refundAge:0,contractEndsOnClaim:false,renewalRates:[],daAmount:0,daPeriodEnd:0,daMinGuarantee:0,polName:"",insuredId:"",insuredName:"",cancelType:"none",cancelRefund:0,cancelNewPrem:0,cancelNote:"",chartColor:"",renewalYears:0,renewalEndAge:0,riders:[],notes:""};}
+b1st:0,brainType:"brain",bCond:"A",brainPayReq:"hospital",brainTimes:"1",brainInterval:"180",brainSecond:"same",brainMemo:"",disType:"none",disLump:0,disMonthly:0,disPayLimit:0,disMinGuarantee:0,disScope:"5big",careType:"none",careLump:0,careMonthly:0,careLevel:"要介護2以上",carePayLimit:0,careMinGuarantee:0,injuryAmount:0,premUnit:"円/月",premAmount:0,premExempt:false,premExemptAmount:0,premExemptType:"none",premExemptDetail:"",exemptMemo:"",currentVal:0,futureVals:[],futureVal1:0,futureVal3:0,futureVal5:0,futureVal6:0,futureValAge:0,futureValNote:"",annualPension:0,pensionStartAge:0,pensionYears:0,currency:"JPY",exchangeRate:150,refundVal:0,refundAge:0,targetOn:false,targetMult:120,targetBase:0,targetCurrency:"JPY",targetRate:3,contractEndsOnClaim:false,renewalRates:[],daAmount:0,daPeriodEnd:0,daMinGuarantee:0,polName:"",insuredId:"",insuredName:"",cancelType:"none",cancelRefund:0,cancelNewPrem:0,cancelNote:"",chartColor:"",renewalYears:0,renewalEndAge:0,riders:[],notes:""};}
 var IP=[
 Object.assign(mkP(1001),{company:"メットライフ生命",insType:"医療保険",policyNo:"3X10546110",contractDate:"2010-01-01",deathType:"lump",dlAmount:50,dlPeriodType:"終身",dlPayType:"60歳払済",dlPayEnd:60,hospDaily:5000,hospLimit:"60日",surgInp:5,premUnit:"円/月",premAmount:12215,premExemptType:"none",refundAge:60,notes:"5年毎健康祝金5万円・60歳時生存還付金あり（設計書参照）"}),
 Object.assign(mkP(1002),{company:"はなさく生命",insType:"変額定期保険",policyNo:"700-0059-3468",contractDate:"2025-06-01",deathType:"lump",dlAmount:709,dlPeriodType:"歳満了",dlPeriodEnd:80,dlPayType:"保険期間と同じ",dlPayEnd:80,disType:"both",careType:"lump",premUnit:"円/月",premAmount:20000,premExempt:true,premExemptType:"3big",premExemptDetail:"上皮内がん・心疾患1泊入院・脳血管1泊入院で免除",notes:"変額保険80歳満了・3大疾病III型（上皮内含む）で保険料免除"}),
@@ -1123,7 +1123,28 @@ function(){var h=el("div");h.style.cssText="font-size:11px;font-weight:700;margi
 grd("g2",[
 lbl("還付金・解約返戻金（万円）",inp("number",pol.refundVal||"",function(v){upd("refundVal",+v);})),
 lbl("受取年齢",inp("number",pol.refundAge||"",function(v){upd("refundAge",+v);}))
-])
+]),
+(function(){
+  // ターゲット型（目標到達で受取）設定
+  var box=el("div");box.style.cssText="margin-top:10px;padding:10px 12px;background:#f0fff4;border:1px solid #a7e3bf;border-radius:6px;";
+  var hd=el("label");hd.style.cssText="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:#1a7a3a;cursor:pointer;";
+  var cb=document.createElement("input");cb.type="checkbox";cb.checked=!!pol.targetOn;
+  cb.addEventListener("change",function(){upd("targetOn",this.checked);render();});
+  hd.appendChild(cb);hd.appendChild(document.createTextNode("ターゲット型（目標到達で受取・アップサイドプラス等）"));
+  box.appendChild(hd);
+  if(pol.targetOn){
+    var note=el("p");note.style.cssText="font-size:11px;color:#5a8a6a;margin:8px 0;";
+    note.textContent="一時払い元本に対し、目標倍率に到達したら受取（運用終了）。到達予想年齢をシミュレーションに表示します。";
+    box.appendChild(note);
+    var g=el("div");g.className="g4";g.style.marginTop="6px";
+    g.appendChild(lbl("元本（一時払・万円）",inp("number",pol.targetBase||"",function(v){upd("targetBase",+v);})));
+    g.appendChild(lbl("目標倍率（％）",inp("number",pol.targetMult||120,function(v){upd("targetMult",+v);})));
+    g.appendChild(lbl("判定通貨",sel([{v:"JPY",l:"円ベース"},{v:"USD",l:"ドルベース"}],pol.targetCurrency||"JPY",function(v){upd("targetCurrency",v);})));
+    g.appendChild(lbl("想定利率（％）",inp("number",pol.targetRate||3,function(v){upd("targetRate",+v);})));
+    box.appendChild(g);
+  }
+  return box;
+})()
 ]));
 } else {
 cont.appendChild(sec("還付金・解約返戻金",null,grd("g2",[
@@ -1680,8 +1701,29 @@ var addEvBtn=btn("＋ 取り崩し追加","bg",function(){drawEvents.push({age:6
 var mm3=mm7;var curAge=myAge7;
 var ages3=[];for(var a3=curAge;a3<=90;a3++)ages3.push(a3);
 var matMap={};
+var targetInfo=[]; // ターゲット型の到達予想（表示用）
 pProjs.forEach(function(x){
 var p=x.policy;var sv2=sV(p);
+if(p.targetOn&&p.targetBase>0&&p.targetMult>0){
+  // ターゲット型：元本を想定利率で運用し、目標倍率に到達する年齢を求める
+  var base=p.targetBase; // 元本（万円。ドルベースでも数値はそのまま倍率判定に使える）
+  var mult=p.targetMult/100;
+  var tr=(+p.targetRate||0)/100;
+  var reachAge=null, reachVal=0;
+  for(var ta=curAge; ta<=95; ta++){
+    var yy=ta-curAge;
+    var grown=base*Math.pow(1+tr,yy); // 元本×(1+利率)^年数
+    if(grown>=base*mult){ reachAge=ta; reachVal=base*mult; break; }
+  }
+  if(reachAge!==null){
+    // 受取額：ドルベースなら現在レートで円換算、円ベースはそのまま
+    var recvJPY=(p.targetCurrency==="USD")?Math.round(reachVal*(p.exchangeRate||150)/10000*100)/100:reachVal;
+    if(!matMap[reachAge])matMap[reachAge]=[];
+    matMap[reachAge].push({id:p.id,val:recvJPY,replace:true});
+    targetInfo.push({id:p.id,label:polLabel(p),age:reachAge,val:recvJPY,mult:p.targetMult,cur:p.targetCurrency});
+  }
+  return; // ターゲット型は他の計算をしない
+}
 if(p.pensionStartAge>0&&p.annualPension>0){
 var pensionTotal=toJPY(p,p.annualPension)*(p.pensionYears||10);
 var pa=p.pensionStartAge;if(!matMap[pa])matMap[pa]=[];matMap[pa].push({id:p.id,val:pensionTotal,replace:true});
@@ -1714,6 +1756,19 @@ if(matMap[ag])matMap[ag].forEach(function(ev2){if(ev2.replace){insV[ev2.id]=ev2.
 pProjs.forEach(function(x){
 var p=x.policy;
 if(matMapIds.indexOf(p.id)>=0)return;
+if(p.targetOn&&p.targetBase>0&&p.targetMult>0){
+  // ターゲット型：到達年齢まで元本を想定利率で増やし、到達後は0（受取済）
+  var ti=null;for(var k=0;k<targetInfo.length;k++){if(targetInfo[k].id===p.id){ti=targetInfo[k];break;}}
+  if(ti&&ag>ti.age){insV[p.id]=0;}
+  else{
+    var trv=(+p.targetRate||0)/100;var yy2=ag-curAge;
+    var gv=p.targetBase*Math.pow(1+trv,yy2);
+    var cap=p.targetBase*(p.targetMult/100);
+    if(gv>cap)gv=cap;
+    insV[p.id]=(p.targetCurrency==="USD")?Math.round(gv*(p.exchangeRate||150)/10000*100)/100:Math.round(gv);
+  }
+  return;
+}
 var isPension=p.pensionStartAge>0&&p.annualPension>0;
 var payEnd=p.dlPayEnd>0?p.dlPayEnd:(p.pensionStartAge||65);
 if(isPension){
@@ -1822,6 +1877,16 @@ var ev3=eA(evalTot,al.retire);
 var evalDiv=null;
 if(evalTot>0){evalDiv=el("div");evalDiv.style.cssText="padding:8px 14px;border-radius:6px;font-size:12px;font-weight:700;margin-top:8px;background:"+ev3.bg+";color:"+ev3.tc+";";evalDiv.textContent=evalAge+"歳時点の推定総資産："+evalTot.toLocaleString()+"万円"+(al.retire>0?"　（安心ライン"+al.retire+"万円に対し "+ev3.m+"）":"");}
 var roDiv=null;if(runout){roDiv=el("div");roDiv.style.cssText="padding:8px 14px;background:#fee2e2;border-radius:6px;font-size:12px;color:#c0392b;font-weight:700;margin-top:6px;";roDiv.textContent="資産が尽きる推定年齢："+runout+"歳";}
+var tgtDiv=null;
+if(targetInfo&&targetInfo.length>0){
+  tgtDiv=el("div");tgtDiv.style.cssText="padding:10px 14px;background:#f0fff4;border:1px solid #a7e3bf;border-radius:6px;font-size:12px;color:#1a7a3a;font-weight:700;margin-top:6px;";
+  var th=el("div");th.textContent="🎯 目標到達の予想";th.style.marginBottom="4px";tgtDiv.appendChild(th);
+  targetInfo.forEach(function(ti){
+    var line=el("div");line.style.cssText="font-weight:600;font-size:12px;margin-top:2px;";
+    line.textContent="・"+ti.label+"：約"+ti.age+"歳で目標"+ti.mult+"％に到達 → 受取 約"+Math.round(ti.val).toLocaleString()+"万円"+(ti.cur==="USD"?"（ドルベース判定）":"（円ベース判定）");
+    tgtDiv.appendChild(line);
+  });
+}
 var simC=document.createElement("canvas");simC.id="ac"+Date.now();
 var simW=el("div");simW.style.cssText="position:relative;height:260px;margin-top:10px;";simW.appendChild(simC);
 var allKeys=["NISA","iDeCo"].concat(pProjs.map(function(x){return polLabel(x.policy);})).concat(["預貯金等"]);
@@ -1891,7 +1956,7 @@ tbl2.appendChild(tb2);
 var tw3=el("div","tw");tw3.appendChild(tbl2);tableDiv.appendChild(tw3);
 });
 tableToggleBtn.style.cssText="padding:4px 12px;font-size:11px;margin-top:8px;";
-cont.appendChild(sec("資産推移・取り崩しシミュレーション",null,[simTop,evNote,evRows,addEvBtn,evalDiv,roDiv,sliderDiv,sliderNote,simW,tableToggleBtn,tableDiv].filter(function(x){return x;})));
+cont.appendChild(sec("資産推移・取り崩しシミュレーション",null,[simTop,evNote,evRows,addEvBtn,evalDiv,roDiv,tgtDiv,sliderDiv,sliderNote,simW,tableToggleBtn,tableDiv].filter(function(x){return x;})));
 setTimeout(function(){if(typeof Chart!=="undefined"){try{chartRef.chart=new Chart(simC,{type:"bar",data:{labels:proj.map(function(d){return d.age+"歳";}),datasets:dsets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"top",labels:{font:{size:10}}},tooltip:{callbacks:{footer:function(items){var idx2=items[0]?items[0].dataIndex:0;return "合計: "+totals[idx2].toLocaleString()+"万円";},label:function(ctx){return ctx.dataset.label+": "+(ctx.parsed.y||0).toLocaleString()+"万円";}}}},scales:{x:{stacked:true,ticks:{maxTicksLimit:12,font:{size:9}}},y:{stacked:true,ticks:{callback:function(v){return v.toLocaleString()+"万円";},font:{size:9}}}}}});}catch(e){simW.textContent="グラフエラー: "+e.message;}}},200);
 return cont;
 }

@@ -245,6 +245,7 @@ async function sbSaveList(){
 <script>
 var DRIVE_CLIENT_ID=storageGet("ins_gdrive_client_id")||"";
 var AI_API_KEY=storageGet("ins_ai_api_key")||"";
+var APP_VERSION="0616-2300";
 var DRIVE_FILE_ID=storageGet("ins_gdrive_file_id")||"";
 var DRIVE_ACCESS_TOKEN="";
 var driveStatus="disconnected";
@@ -2920,6 +2921,7 @@ expBtn.title="データをファイルに保存（バックアップ・端末間
 expBtn.addEventListener("click",function(){exportData();});
 /*削除:データ保存*/
 var saveInd=el("span");saveInd.id="save-ind";saveInd.style.cssText="font-size:9px;color:#aaa;padding:2px 6px;";saveInd.textContent=window._lastSaved?"● 保存済":"";if(window._lastSaved)saveInd.style.color="#27ae60";custWrap.appendChild(saveInd);
+var verInd=el("span");verInd.style.cssText="font-size:9px;color:#c9a84c;padding:2px 6px;font-weight:700;";verInd.textContent="版 "+APP_VERSION;custWrap.appendChild(verInd);
 var impBtn=el("button","btn");impBtn.style.cssText="padding:3px 12px;font-size:12px;font-weight:700;white-space:nowrap;background:#27ae60;color:white;border-radius:4px;cursor:pointer;border:none;";
 impBtn.textContent="↑ データ読込";
 impBtn.addEventListener("click",function(){

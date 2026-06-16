@@ -485,6 +485,7 @@ comparisonMemos:{}
 var assetsData={savings:0,realestate:0,stocks:0,other:0,mortgage:0,mortgageYrs:0,mortgageRate:0,mortgageStart:0,carLoan:0,carLoanYrs:0,otherDebt:0};
 var nisaAccounts=[],idecoAccounts=[],extraRows=[],drawEvents=[];
 var scenRate="3",evalAge=65,drawRate=2;
+var assetMember="all"; // 資産シミュレーションの表示対象: all=合算 / 本人 / 配偶者ID
 var CAM_FIELDS=["company","insType","policyNo","insuredName","contractDate","deathType","dlAmount","dlPeriodType","dlPeriodEnd","dlPayType","dlPayEnd","hospDaily","hospLimit","hospLumpIn","hospLumpOut","surgInp","surgOut","outType","outAmount","injuryAmount","cancerOn","c1st","c2nd","cCond","cancerHosp","cancerSurg","cancerOut2","advancedMedical","advancedMedicalAmount","bigOn","bigCount","h1st","b1st","hCond","bCond","heartType","brainType","disType","disMonthly","disPayLimit","careType","careLump","careMonthly","careLevel","premUnit","premAmount","premExempt","premExemptAmount","premExemptType","premExemptDetail","currentVal","futureVals","futureValAge","annualPension","pensionStartAge","pensionYears","currency","exchangeRate","refundVal","refundAge","renewalRates","contractEndsOnClaim","notes"];
 var currentCustomerId=storageGet("kudo_current_customer")||"kudo";
 function getCustomerKey(){return "ins_customer_"+currentCustomerId;}
@@ -1415,7 +1416,27 @@ b.textContent=x[1];b.style.background=scenRate===x[0]?"#1a2744":"white";b.style.
 b.addEventListener("click",function(){scenRate=x[0];saveState();render();});scBtns.appendChild(b);
 });
 scenDiv.appendChild(scBtns);cont.appendChild(scenDiv);
+// 表示対象（合算／本人／配偶者）の切替（家族が2人以上のときだけ表示）
+if(state.family.length>=2){
+  var memDiv=el("div");memDiv.style.cssText="background:white;border-radius:8px;border:1px solid #ddd8cc;margin-bottom:12px;padding:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;";
+  var mLbl=el("span");mLbl.style.cssText="font-size:12px;font-weight:700;color:#1a2744;";mLbl.textContent="表示対象：";
+  memDiv.appendChild(mLbl);
+  var mBtns=el("div");mBtns.style.cssText="display:flex;gap:4px;flex-wrap:wrap;";
+  var memOpts=[["all","合算（全員）"]].concat(state.family.map(function(fm){return[fm.id,fm.name||fm.relation];}));
+  // 選択中メンバーが家族に存在しなければ合算に戻す
+  if(assetMember!=="all"&&!state.family.some(function(fm){return fm.id===assetMember;}))assetMember="all";
+  memOpts.forEach(function(x){
+    var b=el("button","btn");b.style.cssText="padding:4px 12px;border:1px solid #ddd8cc;border-radius:4px;cursor:pointer;font-size:11px;font-weight:600;";
+    b.textContent=x[1];b.style.background=assetMember===x[0]?"#1a2744":"white";b.style.color=assetMember===x[0]?"white":"#1a2744";
+    b.addEventListener("click",function(){assetMember=x[0];render();});mBtns.appendChild(b);
+  });
+  memDiv.appendChild(mBtns);cont.appendChild(memDiv);
+}
 var pProjs=aPs().filter(function(x){
+  // 表示対象フィルタ（合算以外なら、その家族メンバーの証券だけ）
+  if(assetMember!=="all"&&x.member.id!==assetMember)return false;
+  return true;
+}).filter(function(x){
 var p=x.policy;
 var isVarType=p.insType&&p.insType.indexOf("変額")>=0;
 var isPensionType=p.insType&&p.insType.indexOf("年金")>=0;

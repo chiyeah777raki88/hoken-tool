@@ -245,7 +245,7 @@ async function sbSaveList(){
 <script>
 var DRIVE_CLIENT_ID=storageGet("ins_gdrive_client_id")||"";
 var AI_API_KEY=storageGet("ins_ai_api_key")||"";
-var APP_VERSION="0617-0020";
+var APP_VERSION="0617-0045";
 var DRIVE_FILE_ID=storageGet("ins_gdrive_file_id")||"";
 var DRIVE_ACCESS_TOKEN="";
 var driveStatus="disconnected";
@@ -1882,6 +1882,7 @@ var pa=p.pensionStartAge;if(!matMap[pa])matMap[pa]=[];matMap[pa].push({id:p.id,v
 } else if(p.futureVals&&p.futureVals.length>0){
 p.futureVals.forEach(function(row){
 var rawVal=scenRate==="1"?row.v1||0:scenRate==="5"?row.v5||0:scenRate==="6"?row.v6||0:row.v3||0;
+if(!(rawVal>0))rawVal=row.v3||row.v1||row.v5||row.v6||0; // 円建て等：選んだ運用率が空なら他の値を使う
 if(rawVal>0&&row.age>0){
 var jVal=p.currency&&p.currency!=="JPY"?Math.round(rawVal*(p.exchangeRate||150)/10000):rawVal;
 if(!matMap[row.age])matMap[row.age]=[];matMap[row.age].push({id:p.id,val:jVal,replace:true});
@@ -1940,12 +1941,12 @@ oR+=annualPayout;
 insV[p.id]=0;
 }
 }
-} else if(p.futureVals&&p.futureVals.length>0&&ag<=payEnd){
+} else if(p.futureVals&&p.futureVals.length>0&&(ag<=payEnd||(p.insType&&p.insType.indexOf("変額")<0))){
 var sorted=p.futureVals.slice().sort(function(aa,bb){return aa.age-bb.age;});
 var prev={age:curAge,v1:p.currentVal||0,v3:p.currentVal||0,v5:p.currentVal||0,v6:p.currentVal||0};
 var next=null;
 for(var fi=0;fi<sorted.length;fi++){if(sorted[fi].age<=ag)prev=sorted[fi];else if(!next)next=sorted[fi];}
-var getV=function(row){return scenRate==="1"?row.v1||0:scenRate==="5"?row.v5||0:scenRate==="6"?row.v6||0:row.v3||0;};
+var getV=function(row){var r=scenRate==="1"?row.v1||0:scenRate==="5"?row.v5||0:scenRate==="6"?row.v6||0:row.v3||0;if(!(r>0))r=row.v3||row.v1||row.v5||row.v6||0;return r;};
 if(next){
 var ratio2=(ag-prev.age)/(next.age-prev.age);
 var jPrev=p.currency&&p.currency!=="JPY"?Math.round((getV(prev))*(p.exchangeRate||150)/10000):getV(prev);

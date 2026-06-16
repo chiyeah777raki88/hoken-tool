@@ -1050,7 +1050,7 @@ renderRR();
 var addRR=btn("＋ 更新保険料を追加","bg",function(){if(!pol.renewalRates)pol.renewalRates=[];pol.renewalRates.push({age:0,prem:0});saveState();renderRR();});
 cont.appendChild(sec("更新後保険料テーブル",null,[rrRows,addRR]));
 }
-var isVP=pol.insType&&(pol.insType.indexOf("変額")>=0||pol.insType.indexOf("年金")>=0);
+var isVP=pol.insType&&(pol.insType.indexOf("変額")>=0||pol.insType.indexOf("年金")>=0||pol.insType.indexOf("終身")>=0||pol.insType.indexOf("養老")>=0||pol.insType.indexOf("学資")>=0||pol.insType.indexOf("総合保険")>=0);
 if(isVP||pol.refundVal>0||pol.refundAge>0){
 var unit=pol.currency&&pol.currency!=="JPY"?pol.currency:"万円";
 if(!pol.futureVals)pol.futureVals=[];

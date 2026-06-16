@@ -477,7 +477,7 @@ var ET={none:"なし",cancer:"悪性新生物（がん）",cancer_jhi:"上皮内
 var CPROMPT="保険証券・設計書の画像から情報をJSONで正確に抽出してください。\n\n【重要ルール】\n1. JSONのみ返す（説明文不要）\n2. 見つからない項目はnull\n3. 金額は万円単位の数値（例:500万円→500）\n4. 先進医療特約の金額はadvancedMedicalAmountに入れる（c1stに入れない）\n5. がん診断給付金のみc1stに入れる\n6. 会社名は正確に読み取る\n\n【読み取り精度の厳守事項】\nA. 数字は1文字ずつ慎重に読む。0と6と8、1と7、3と8を取り違えないこと。\nB. 金額の単位を必ず確認する。「円」と「万円」「千円」を混同しない。日額は円、保険金や給付金は万円で記入する。\nC. はっきり読めない文字・数字は推測で埋めず、その項目はnullにする。\nD. 証券番号は記号・ハイフン・「第〜号」も含めて原文のまま正確に写す。\nE. 複数ページや表がある場合は全ページを突き合わせ、最新・正式な数値を優先する。\nF. チェック欄や特約あり/なしの表示を見て、true/falseを正しく判定する。空欄や取消線は付帯なしとみなす。\n\n【フィールド一覧】\ncompany:保険会社名（例:第一ネオ生命・SOMPOひまわり生命等）\ninsType:保険種類（医療保険/がん保険/終身保険/定期保険/変額終身保険/個人年金保険等）\npolicyNo:証券番号\ninsuredName:被保険者名（保障の対象者。契約者と別の場合に記載。同じか不明ならnull）\ncontractDate:契約日YYYY-MM-DD\ndeathType:死亡保障タイプ none/lump/annuity/both\ndlAmount:死亡保険金（万円）\ndlPeriodType:保険期間 終身/歳満了/年更新/更新後終身\ndlPeriodEnd:満了年齢または更新終了年齢\ndlPayType:払込期間 終身払/60歳払済/65歳払済/70歳払済/更新型/保険期間と同じ\ndlPayEnd:払込満了年齢\nhospDaily:入院日額（円）\nhospLimit:入院支払限度（例:60日/120日/無制限）\nhospLumpIn:入院一時金（万円）※入院した時に一時金として支払われるもの\nhospLumpOut:退院一時金（万円）※退院時に支払われるもの\nsurgInp:手術給付金・入院時（万円または入院日額の倍率を記載）\nadvancedMedical:先進医療特約 true/false\nadvancedMedicalAmount:先進医療給付金の上限（万円）\ncancerOn:がん特約 true/false\nc1st:がん診断給付金1回目（万円）※がんと診断された時の一時金のみ\nc2nd:がん診断給付金2回目以降（万円）\ncancerHosp:がん入院日額（円）\ncancerSurg:がん手術給付金（万円）\ncancerOut:がん通院日額（円）\nbigOn:3大疾病/8大疾病特約 true/false\nbigCount:3大疾病/7大疾病/8大疾病\nh1st:心疾患給付金（万円）\nhCond:心疾患要件 A:60日所定/B:入院10日以上/C:1泊入院\nb1st:脳血管疾患給付金（万円）\nbCond:脳血管要件 A:60日所定/B:入院10日以上/C:1泊入院\ndisType:就業不能 none/lump/monthly/both\ndisMonthly:就業不能月額（万円）\ncareType:介護 none/lump/monthly/both\ncareLump:介護一時金（万円）\ncareMonthly:介護月額（万円）\noutType:通院特約 none/daily/monthly（通院給付金があればdaily、月額ならmonthly）\noutAmount:通院給付金の日額または月額（円。通院日額5000円ならoutType=daily,outAmount=5000）\nsurgOut:外来手術給付金（万円）\ninjuryAmount:傷害・ケガ給付金（万円）\npremUnit:払込方法 円/月または円/年\npremAmount:保険料数値\npremExemptType:免除条件 none/cancer/3big/5big/8big/dis/care/death/multi\npremExemptDetail:免除条件の詳細説明\ncurrentVal:現在の積立金額（万円）\nfutureVals:将来予測テーブル配列（各要素:{age:年齢,paid:払込保険料累計,v1:最低保証,v3:3%,v5:5%,v6:6%}）。★変額保険は運用率別(3%/5%/6%)の予測額を各列に入れる。★円建て終身・養老・ドル建て終身などで『解約返戻金の推移表』『年齢別の解約返戻金』『返戻率の表』がある場合も、必ずこのfutureValsに入れること。その場合は運用率の区別が無いので、各年齢の解約返戻金額（万円。外貨なら原通貨の数値）を v3 に入れ、v1・v5・v6にも同じ値を入れる。表に払込保険料累計（既払込保険料）の列があれば paid に入れる。返戻率(%)しか書かれていない場合は、払込保険料累計×返戻率/100 で金額に換算して入れる（換算できなければ返戻率の数値をそのまま入れる）。年齢が書かれず『経過年数』の場合は、契約日や現在年齢から年齢に換算する。返戻金表は読み取れた行を全て入れる。\nannualPension:年金年額（外貨は原通貨の数値）\npensionStartAge:年金開始年齢\npensionYears:受取期間年\ncurrency:通貨 JPY/USD/EUR/AUD\nexchangeRate:為替レート\nrefundVal:生存還付金（万円）\nrefundAge:還付金受取年齢\nrenewals:更新後保険料テーブル配列（各要素:{age:年齢,prem:月額保険料}）\nnotes:対応する項目があるものは必ずその項目へ。notesには対応項目の無い事項だけ簡潔に書く。\n\n【特約の振り分け（最重要）】通院給付金→outType/outAmount、先進医療→advancedMedical/advancedMedicalAmount、入院一時金→hospLumpIn、がん→cancer系、のように必ず対応項目に入れる。特約内容をnotesに長々と書かないこと。";
 function mkP(id){return {id:id||Date.now(),company:"",insType:"",policyNo:"",contractDate:"",deathType:"none",dlAmount:0,dlPeriodType:"終身",dlPeriodEnd:0,dlPayType:"終身払",dlPayEnd:0,hospDaily:0,hospLimit:"60日",hospLumpIn:0,hospLumpOut:0,surgInp:0,surgOut:0,surgType:"fixed",surgInpMult:"10",surgOutMult:"0",surgMemo:"",hospMemo:"",outMemo:"",outType:"none",outAmount:0,cancerOn:false,c1st:0,c2nd:0,cCond:"A",cancerTimes:"unlimited",cancerInterval:"180",cancerSecond:"same",cancerSecondReq:"outpatient",cancerHosp:0,cancerSurg:0,cancerOut2:0,cancerMonthly:0,cancerMonthlyPeriod:"none",cancerMonthlyTarget:"all",cancerMonthlyMemo:"",cancerContinue:false,cancerContinueAmount:0,cancerContinueType:"annual",cancerContinueMemo:"",advancedMedical:false,advancedMedicalAmount:0,bigOn:false,bigCount:"3大疾病",
 h1st:0,heartType:"heart",hCond:"A",heartPayReq:"hospital",heartTimes:"1",heartInterval:"180",heartSecond:"same",heartMemo:"",
-b1st:0,brainType:"brain",bCond:"A",brainPayReq:"hospital",brainTimes:"1",brainInterval:"180",brainSecond:"same",brainMemo:"",disType:"none",disLump:0,disMonthly:0,disPayLimit:0,disMinGuarantee:0,disScope:"5big",careType:"none",careLump:0,careMonthly:0,careLevel:"要介護2以上",carePayLimit:0,careMinGuarantee:0,injuryAmount:0,premUnit:"円/月",premAmount:0,premExempt:false,premExemptAmount:0,premExemptType:"none",premExemptDetail:"",exemptMemo:"",currentVal:0,futureVals:[],futureVal1:0,futureVal3:0,futureVal5:0,futureVal6:0,futureValAge:0,futureValNote:"",annualPension:0,pensionStartAge:0,pensionYears:0,currency:"JPY",exchangeRate:150,refundVal:0,refundAge:0,targetOn:false,targetMode:"target",targetMult:120,targetBase:0,targetCurrency:"JPY",targetRate:3,contractEndsOnClaim:false,renewalRates:[],daAmount:0,daPeriodEnd:0,daMinGuarantee:0,polName:"",insuredId:"",insuredName:"",cancelType:"none",cancelRefund:0,cancelNewPrem:0,cancelNote:"",chartColor:"",renewalYears:0,renewalEndAge:0,riders:[],notes:""};}
+b1st:0,brainType:"brain",bCond:"A",brainPayReq:"hospital",brainTimes:"1",brainInterval:"180",brainSecond:"same",brainMemo:"",disType:"none",disLump:0,disMonthly:0,disPayLimit:0,disMinGuarantee:0,disScope:"5big",careType:"none",careLump:0,careMonthly:0,careLevel:"要介護2以上",carePayLimit:0,careMinGuarantee:0,injuryAmount:0,premUnit:"円/月",premAmount:0,premExempt:false,premExemptAmount:0,premExemptType:"none",premExemptDetail:"",exemptMemo:"",currentVal:0,futureVals:[],showPaid:true,futureVal1:0,futureVal3:0,futureVal5:0,futureVal6:0,futureValAge:0,futureValNote:"",annualPension:0,pensionStartAge:0,pensionYears:0,currency:"JPY",exchangeRate:150,refundVal:0,refundAge:0,targetOn:false,targetMode:"target",targetMult:120,targetBase:0,targetCurrency:"JPY",targetRate:3,contractEndsOnClaim:false,renewalRates:[],daAmount:0,daPeriodEnd:0,daMinGuarantee:0,polName:"",insuredId:"",insuredName:"",cancelType:"none",cancelRefund:0,cancelNewPrem:0,cancelNote:"",chartColor:"",renewalYears:0,renewalEndAge:0,riders:[],notes:""};}
 var IP=[
 Object.assign(mkP(1001),{company:"メットライフ生命",insType:"医療保険",policyNo:"3X10546110",contractDate:"2010-01-01",deathType:"lump",dlAmount:50,dlPeriodType:"終身",dlPayType:"60歳払済",dlPayEnd:60,hospDaily:5000,hospLimit:"60日",surgInp:5,premUnit:"円/月",premAmount:12215,premExemptType:"none",refundAge:60,notes:"5年毎健康祝金5万円・60歳時生存還付金あり（設計書参照）"}),
 Object.assign(mkP(1002),{company:"はなさく生命",insType:"変額定期保険",policyNo:"700-0059-3468",contractDate:"2025-06-01",deathType:"lump",dlAmount:709,dlPeriodType:"歳満了",dlPeriodEnd:80,dlPayType:"保険期間と同じ",dlPayEnd:80,disType:"both",careType:"lump",premUnit:"円/月",premAmount:20000,premExempt:true,premExemptType:"3big",premExemptDetail:"上皮内がん・心疾患1泊入院・脳血管1泊入院で免除",notes:"変額保険80歳満了・3大疾病III型（上皮内含む）で保険料免除"}),
@@ -1122,12 +1122,23 @@ if(isVP||pol.refundVal>0||pol.refundAge>0){
 var unit=pol.currency&&pol.currency!=="JPY"?pol.currency:"万円";
 if(!pol.futureVals)pol.futureVals=[];
 var isVar=pol.insType&&pol.insType.indexOf("変額")>=0; // 変額系は運用率別、それ以外（円建て終身等）は単一の返戻金
+if(pol.showPaid===undefined)pol.showPaid=true;
 var vpTableWrap=el("div");
 var renderVpTable=function(){
 vpTableWrap.innerHTML="";
+// 払込累計・返戻率を使うかのチェック（掛け捨て等はオフにできる）
+var optBar=el("div");optBar.style.cssText="display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:11px;color:#1a2744;";
+var ocb=document.createElement("input");ocb.type="checkbox";ocb.checked=!!pol.showPaid;
+ocb.addEventListener("change",function(){pol.showPaid=this.checked;upd("showPaid",pol.showPaid);renderVpTable();});
+var olb=el("label");olb.style.cssText="cursor:pointer;display:flex;align-items:center;gap:5px;";
+olb.appendChild(ocb);olb.appendChild(document.createTextNode("払込累計・返戻率を表示する（掛け捨てはオフ）"));
+optBar.appendChild(olb);vpTableWrap.appendChild(optBar);
+var sp=!!pol.showPaid;
 var tbl=document.createElement("table");tbl.style.cssText="width:100%;border-collapse:collapse;font-size:11px;margin-bottom:8px;";
 var thead=el("thead"),hr=el("tr");
-var cols=isVar?["年齢","最低保証/1%("+unit+")","3%("+unit+")","5%("+unit+")","6%("+unit+")",""]:["年齢","払込累計("+unit+")","解約返戻金("+unit+")","返戻率",""];
+var cols;
+if(isVar){cols=["年齢"].concat(sp?["払込累計("+unit+")"]:[]).concat(["最低保証/1%("+unit+")","3%("+unit+")","5%("+unit+")","6%("+unit+")",""]);}
+else{cols=["年齢"].concat(sp?["払込累計("+unit+")"]:[]).concat(["解約返戻金("+unit+")"]).concat(sp?["返戻率"]:[]).concat([""]);}
 cols.forEach(function(h){
 var th=el("th",null,h);th.style.cssText="background:#1a2744;color:white;padding:5px 6px;text-align:center;font-size:10px;";hr.appendChild(th);
 });
@@ -1138,22 +1149,26 @@ var tr=el("tr");
 var ageI=inp("number",row.age||"",function(v){pol.futureVals[ri].age=+v;upd("futureVals",pol.futureVals);});ageI.style.textAlign="right";ageI.placeholder="歳";
 var db=el("button","btn br");db.style.cssText="padding:2px 6px;font-size:10px;";db.textContent="×";
 db.addEventListener("click",function(){pol.futureVals.splice(ri,1);upd("futureVals",pol.futureVals);renderVpTable();});
+var paidI=null;
+if(sp){paidI=inp("number",row.paid||"",function(v){pol.futureVals[ri].paid=+v;upd("futureVals",pol.futureVals);renderVpTable();});}
 if(isVar){
   var v1I=inp("number",row.v1||"",function(v){pol.futureVals[ri].v1=+v;upd("futureVals",pol.futureVals);});
   var v3I=inp("number",row.v3||"",function(v){pol.futureVals[ri].v3=+v;upd("futureVals",pol.futureVals);});v3I.style.background="#fffde7";
   var v5I=inp("number",row.v5||"",function(v){pol.futureVals[ri].v5=+v;upd("futureVals",pol.futureVals);});
   var v6I=inp("number",row.v6||"",function(v){pol.futureVals[ri].v6=+v;upd("futureVals",pol.futureVals);});v6I.style.background="#fff0e6";
-  [ageI,v1I,v3I,v5I,v6I,db].forEach(function(x){var td=el("td");td.style.padding="2px 3px";td.appendChild(x);tr.appendChild(td);});
+  var cells=[ageI].concat(sp?[paidI]:[]).concat([v1I,v3I,v5I,v6I,db]);
+  cells.forEach(function(x){var td=el("td");td.style.padding="2px 3px";td.appendChild(x);tr.appendChild(td);});
 }else{
-  // 円建て終身等：払込累計・解約返戻金・返戻率(自動)
-  var paidI=inp("number",row.paid||"",function(v){pol.futureVals[ri].paid=+v;upd("futureVals",pol.futureVals);renderVpTable();});
   var rvVal=row.v3||row.v1||row.v5||row.v6||"";
   var rI=inp("number",rvVal,function(v){var n=+v;pol.futureVals[ri].v1=n;pol.futureVals[ri].v3=n;pol.futureVals[ri].v5=n;pol.futureVals[ri].v6=n;upd("futureVals",pol.futureVals);renderVpTable();});rI.style.background="#fffde7";
-  var rate=el("div");
-  var paidN=+row.paid||0,rvN=+(row.v3||row.v1||0);
-  rate.textContent=(paidN>0&&rvN>0)?Math.round(rvN/paidN*1000)/10+"%":"—";
-  rate.style.cssText="font-size:11px;font-weight:700;text-align:center;color:"+((paidN>0&&rvN>=paidN)?"#1a7a3a":"#1a2744")+";padding:4px;";
-  [ageI,paidI,rI,rate,db].forEach(function(x){var td=el("td");td.style.padding="2px 3px";td.appendChild(x);tr.appendChild(td);});
+  var rate=null;
+  if(sp){
+    rate=el("div");var paidN=+row.paid||0,rvN=+(row.v3||row.v1||0);
+    rate.textContent=(paidN>0&&rvN>0)?Math.round(rvN/paidN*1000)/10+"%":"—";
+    rate.style.cssText="font-size:11px;font-weight:700;text-align:center;color:"+((paidN>0&&rvN>=paidN)?"#1a7a3a":"#1a2744")+";padding:4px;";
+  }
+  var cells=[ageI].concat(sp?[paidI]:[]).concat([rI]).concat(sp?[rate]:[]).concat([db]);
+  cells.forEach(function(x){var td=el("td");td.style.padding="2px 3px";td.appendChild(x);tr.appendChild(td);});
 }
 tbody.appendChild(tr);
 });
@@ -1162,7 +1177,7 @@ vpTableWrap.appendChild(tbl);
 vpTableWrap.appendChild(btn("＋ 年齢を追加","bg",function(){
 if(!pol.futureVals)pol.futureVals=[];
 var lastAge=pol.futureVals.length>0?pol.futureVals[pol.futureVals.length-1].age||60:60;
-pol.futureVals.push({age:lastAge+5,v1:0,v3:0,v5:0,v6:0});
+pol.futureVals.push({age:lastAge+5,paid:0,v1:0,v3:0,v5:0,v6:0});
 upd("futureVals",pol.futureVals);renderVpTable();
 }));
 };

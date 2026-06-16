@@ -1121,12 +1121,14 @@ var isVP=pol.insType&&(pol.insType.indexOf("変額")>=0||pol.insType.indexOf("�
 if(isVP||pol.refundVal>0||pol.refundAge>0){
 var unit=pol.currency&&pol.currency!=="JPY"?pol.currency:"万円";
 if(!pol.futureVals)pol.futureVals=[];
+var isVar=pol.insType&&pol.insType.indexOf("変額")>=0; // 変額系は運用率別、それ以外（円建て終身等）は単一の返戻金
 var vpTableWrap=el("div");
 var renderVpTable=function(){
 vpTableWrap.innerHTML="";
 var tbl=document.createElement("table");tbl.style.cssText="width:100%;border-collapse:collapse;font-size:11px;margin-bottom:8px;";
 var thead=el("thead"),hr=el("tr");
-["年齢","最低保証/1%("+unit+")","3%("+unit+")","5%("+unit+")","6%("+unit+")",""].forEach(function(h){
+var cols=isVar?["年齢","最低保証/1%("+unit+")","3%("+unit+")","5%("+unit+")","6%("+unit+")",""]:["年齢","解約返戻金("+unit+")",""];
+cols.forEach(function(h){
 var th=el("th",null,h);th.style.cssText="background:#1a2744;color:white;padding:5px 6px;text-align:center;font-size:10px;";hr.appendChild(th);
 });
 thead.appendChild(hr);tbl.appendChild(thead);
@@ -1134,13 +1136,20 @@ var tbody=el("tbody");
 (pol.futureVals||[]).forEach(function(row,ri){
 var tr=el("tr");
 var ageI=inp("number",row.age||"",function(v){pol.futureVals[ri].age=+v;upd("futureVals",pol.futureVals);});ageI.style.textAlign="right";ageI.placeholder="歳";
-var v1I=inp("number",row.v1||"",function(v){pol.futureVals[ri].v1=+v;upd("futureVals",pol.futureVals);});
-var v3I=inp("number",row.v3||"",function(v){pol.futureVals[ri].v3=+v;upd("futureVals",pol.futureVals);});v3I.style.background="#fffde7";
-var v5I=inp("number",row.v5||"",function(v){pol.futureVals[ri].v5=+v;upd("futureVals",pol.futureVals);});
-var v6I=inp("number",row.v6||"",function(v){pol.futureVals[ri].v6=+v;upd("futureVals",pol.futureVals);});v6I.style.background="#fff0e6";
 var db=el("button","btn br");db.style.cssText="padding:2px 6px;font-size:10px;";db.textContent="×";
 db.addEventListener("click",function(){pol.futureVals.splice(ri,1);upd("futureVals",pol.futureVals);renderVpTable();});
-[ageI,v1I,v3I,v5I,v6I,db].forEach(function(x){var td=el("td");td.style.padding="2px 3px";td.appendChild(x);tr.appendChild(td);});
+if(isVar){
+  var v1I=inp("number",row.v1||"",function(v){pol.futureVals[ri].v1=+v;upd("futureVals",pol.futureVals);});
+  var v3I=inp("number",row.v3||"",function(v){pol.futureVals[ri].v3=+v;upd("futureVals",pol.futureVals);});v3I.style.background="#fffde7";
+  var v5I=inp("number",row.v5||"",function(v){pol.futureVals[ri].v5=+v;upd("futureVals",pol.futureVals);});
+  var v6I=inp("number",row.v6||"",function(v){pol.futureVals[ri].v6=+v;upd("futureVals",pol.futureVals);});v6I.style.background="#fff0e6";
+  [ageI,v1I,v3I,v5I,v6I,db].forEach(function(x){var td=el("td");td.style.padding="2px 3px";td.appendChild(x);tr.appendChild(td);});
+}else{
+  // 円建て終身等：解約返戻金は単一。入力値を v1/v3/v5/v6 全部に入れる（運用率に左右されない）
+  var rvVal=row.v3||row.v1||row.v5||row.v6||"";
+  var rI=inp("number",rvVal,function(v){var n=+v;pol.futureVals[ri].v1=n;pol.futureVals[ri].v3=n;pol.futureVals[ri].v5=n;pol.futureVals[ri].v6=n;upd("futureVals",pol.futureVals);});rI.style.background="#fffde7";
+  [ageI,rI,db].forEach(function(x){var td=el("td");td.style.padding="2px 3px";td.appendChild(x);tr.appendChild(td);});
+}
 tbody.appendChild(tr);
 });
 tbl.appendChild(tbody);
@@ -1170,7 +1179,7 @@ currDiv.appendChild(rLbl);currDiv.appendChild(rI);currDiv.appendChild(rNote);
 cont.appendChild(sec("変額・年金・還付金（設計書より）",null,[
 currDiv,
 el("div",null),
-function(){var h=el("div");h.style.cssText="font-size:11px;font-weight:700;margin:4px 0;color:#1a2744;";h.textContent="将来予測額（年齢別×運用率）";return h;}(),
+function(){var h=el("div");h.style.cssText="font-size:11px;font-weight:700;margin:4px 0;color:#1a2744;";h.textContent=isVar?"将来予測額（年齢別×運用率）":"解約返戻金の推移（年齢別）";return h;}(),
 vpTableWrap,
 function(){var h=el("div");h.style.cssText="font-size:11px;font-weight:700;margin:8px 0 4px;color:#1a2744;";h.textContent="個人年金";return h;}(),
 function(){var p2=el("p");p2.style.cssText="font-size:11px;color:#8a8a8a;margin-bottom:6px;";p2.textContent="年金年額を入力すると受取総額が自動計算されます（利率不要）。";return p2;}(),

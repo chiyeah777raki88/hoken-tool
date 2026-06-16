@@ -3340,8 +3340,23 @@ doInit();
 } else {doInit();}
 }catch(e){doInit();}
 } // end startApp
-// 起動：まずログイン画面を出す
-showLogin();
+// 起動：すでにログイン済みなら自動で入る（ログイン画面を出さない）
+(function(){
+  if(sbInit()&&sbClient&&sbClient.auth&&sbClient.auth.getSession){
+    sbClient.auth.getSession().then(async function(r){
+      if(r&&r.data&&r.data.session&&r.data.session.user){
+        sbUser=r.data.session.user;SYNC_ON=true;
+        try{await sbLoadAll();}catch(e){}
+        try{await sbLoadApiKey();}catch(e){}
+        startApp();
+      }else{
+        showLogin();
+      }
+    }).catch(function(){showLogin();});
+  }else{
+    showLogin();
+  }
+})();
 })();
 </script>
 </body>

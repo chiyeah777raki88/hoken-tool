@@ -866,8 +866,32 @@ lbl("保険種類",sel(ITS.map(function(t){return{v:t,l:t};}),pol.insType,functi
 lbl("証券番号",inp("text",pol.policyNo,function(v){upd("policyNo",v);})),
 lbl("被保険者",sel([{v:"",l:"（契約者本人）"}].concat(state.family.map(function(fm){return{v:fm.id,l:fm.name||fm.relation};})).concat([{v:"other",l:"その他（手入力）"}]),pol.insuredId||"",function(v){upd("insuredId",v);render();})),
 (pol.insuredId==="other")?lbl("被保険者名（手入力）",inp("text",pol.insuredName||"",function(v){upd("insuredName",v);})):null,
-lbl("契約日",makeDobInput(pol.contractDate,function(v){upd("contractDate",v);})),
-lbl("払込方法",sel([{v:"円/月",l:"月払"},{v:"円/年",l:"年払"},{v:"一時払",l:"一時払"}],pol.premUnit,function(v){upd("premUnit",v);})),
+lbl("契約日",makeDobInput(pol.contractDate,function(v){upd("contractDate",v);render();})),
+(function(){
+  // 加入時年齢を自動計算（被保険者の生年月日と契約日から）
+  var insuredDob="";
+  if(pol.insuredId&&pol.insuredId!=="other"){
+    var fm=state.family.filter(function(x){return x.id===pol.insuredId;})[0];
+    if(fm)insuredDob=fm.dob||"";
+  } else if(!pol.insuredId){
+    var self=state.family.filter(function(x){return x.relation==="本人";})[0]||state.family[0];
+    if(self)insuredDob=self.dob||"";
+  }
+  var ageTxt="—";
+  if(insuredDob&&pol.contractDate){
+    var d1=new Date(insuredDob), d2=new Date(pol.contractDate);
+    if(!isNaN(d1)&&!isNaN(d2)){
+      var a=d2.getFullYear()-d1.getFullYear();
+      var m=d2.getMonth()-d1.getMonth();
+      if(m<0||(m===0&&d2.getDate()<d1.getDate()))a--;
+      if(a>=0&&a<120)ageTxt=a+"歳";
+    }
+  }
+  var w=el("div");w.style.cssText="display:flex;flex-direction:column;";
+  var l=el("label");l.textContent="加入時年齢（自動）";l.style.cssText="font-size:11px;color:#8a8a8a;margin-bottom:3px;";
+  var v=el("div");v.textContent=ageTxt;v.style.cssText="font-size:14px;font-weight:700;color:#1a2744;padding:7px 0;";
+  w.appendChild(l);w.appendChild(v);return w;
+})(),
 lbl("保険料（"+pol.premUnit+"）",inp("number",pol.premAmount,function(v){upd("premAmount",+v);}))
 ]),grd("g4",[
 lbl("保険期間",sel([{v:"終身",l:"終身"},{v:"歳満了",l:"歳満了"},{v:"年満了",l:"年満了"},{v:"年更新",l:"年更新"},{v:"更新後終身",l:"更新後終身"}],pol.dlPeriodType||"終身",function(v){upd("dlPeriodType",v);render();})),

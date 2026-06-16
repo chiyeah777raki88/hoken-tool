@@ -778,14 +778,38 @@ var ex=box.querySelector(".cbox");if(ex)ex.remove();
 var cb=el("div","cbox");
 var chdr=el("div","chdr","読み取り結果を確認してください");
 var brow=el("div");brow.style.cssText="display:flex;gap:6px;";
+// 既存データがあるか（追記モードの初期値判定）
+var hasExisting=!!(pol&&(pol.company||pol.dlAmount||pol.premAmount||pol.insType));
+var keepMode={on:hasExisting}; // 既存があるならデフォルトで「上書きしない（追記）」
 var applyBtn=btn("この内容で入力","bv",function(){
 var merged=JSON.parse(JSON.stringify(pol));
-CAM_FIELDS.forEach(function(f){if(draft[f]!==null&&draft[f]!==undefined&&draft[f]!=="")merged[f]=draft[f];});if(merged.insuredName&&!merged.insuredId){merged.insuredId="other";}
+CAM_FIELDS.forEach(function(f){
+  var dv=draft[f];
+  if(dv===null||dv===undefined||dv==="")return; // 読めなかった項目は触らない
+  if(keepMode.on){
+    // 追記モード：既存に値が入っている項目は上書きしない（空の項目だけ埋める）
+    var cur=pol[f];
+    var curHasVal=(cur!==null&&cur!==undefined&&cur!==""&&cur!==0&&!(Array.isArray(cur)&&cur.length===0));
+    if(curHasVal)return; // 既存があるので守る
+  }
+  merged[f]=dv;
+});
+if(merged.insuredName&&!merged.insuredId){merged.insuredId="other";}
+// 将来予測テーブル（返戻金表）：新情報なので、読み取れたら反映（追記モードでも更新）
 if(Array.isArray(draft.futureVals)&&draft.futureVals.length>0)merged.futureVals=draft.futureVals;
 onResult(merged);cb.remove();msgEl.textContent="入力しました！";msgEl.style.color="#27ae60";
 });
 var cancelBtn=btn("キャンセル","br",function(){cb.remove();msgEl.textContent="";});
 brow.appendChild(applyBtn);brow.appendChild(cancelBtn);chdr.appendChild(brow);cb.appendChild(chdr);
+// 追記モードの切替（既存データを守る）
+var modeBar=el("div");modeBar.style.cssText="padding:8px 14px;background:#f0fff4;border-bottom:1px solid #a7e3bf;font-size:12px;color:#1a7a3a;display:flex;align-items:center;gap:8px;";
+var mcb=document.createElement("input");mcb.type="checkbox";mcb.checked=keepMode.on;
+mcb.addEventListener("change",function(){keepMode.on=this.checked;});
+var mlb=el("label");mlb.style.cssText="cursor:pointer;font-weight:700;display:flex;align-items:center;gap:6px;";
+mlb.appendChild(mcb);mlb.appendChild(document.createTextNode("すでに入っている項目は上書きしない（追記だけ）"));
+var mnote=el("span");mnote.style.cssText="font-size:11px;color:#5a8a6a;";mnote.textContent="※返戻金・将来予測の表は新情報として反映します";
+modeBar.appendChild(mlb);modeBar.appendChild(mnote);
+cb.appendChild(modeBar);
 var cbody=el("div","cbody");
 CGROUPS.forEach(function(g){
 var gd=el("div","cgrp"),gt=el("div","cgtitle",g.t);gd.appendChild(gt);

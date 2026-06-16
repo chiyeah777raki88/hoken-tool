@@ -245,7 +245,7 @@ async function sbSaveList(){
 <script>
 var DRIVE_CLIENT_ID=storageGet("ins_gdrive_client_id")||"";
 var AI_API_KEY=storageGet("ins_ai_api_key")||"";
-var APP_VERSION="0617-0110";
+var APP_VERSION="0617-0130";
 var DRIVE_FILE_ID=storageGet("ins_gdrive_file_id")||"";
 var DRIVE_ACCESS_TOKEN="";
 var driveStatus="disconnected";
@@ -1243,6 +1243,7 @@ cont.appendChild(sec("変額・年金・還付金（設計書より）",null,[
 currDiv,
 el("div",null),
 function(){var h=el("div");h.style.cssText="font-size:11px;font-weight:700;margin:4px 0;color:#1a2744;";h.textContent=isVar?"将来予測額（年齢別×運用率）":"解約返戻金の推移（年齢別）";return h;}(),
+function(){if(!(pol.currency&&pol.currency!=="JPY"))return el("div",null);var n=el("p");n.style.cssText="font-size:11px;color:#b8860b;background:#fffbe6;border:1px solid #f0d060;border-radius:5px;padding:5px 8px;margin:0 0 6px;";n.textContent="※外貨はそのままの金額で入力（例：20万ドルなら 200000）。上の為替レートで自動的に円換算され、資産シミュレーションに反映されます。";return n;}(),
 vpTableWrap,
 function(){var h=el("div");h.style.cssText="font-size:11px;font-weight:700;margin:8px 0 4px;color:#1a2744;";h.textContent="個人年金";return h;}(),
 function(){var p2=el("p");p2.style.cssText="font-size:11px;color:#8a8a8a;margin-bottom:6px;";p2.textContent="年金年額を入力すると受取総額が自動計算されます（利率不要）。";return p2;}(),

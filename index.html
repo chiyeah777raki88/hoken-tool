@@ -176,6 +176,16 @@ function sbInit(){
   return false;
 }
 // Supabaseから自分の全顧客データを読み込んで_cacheに反映
+async function sbLoadApiKey(){
+  if(!sbClient||!sbUser)return;
+  try{
+    var r=await sbClient.from("user_settings").select("api_key").eq("user_id",sbUser.id).maybeSingle();
+    if(r&&r.data&&r.data.api_key){
+      AI_API_KEY=r.data.api_key;
+      try{storageSet("ins_ai_api_key",AI_API_KEY);}catch(e){}
+    }
+  }catch(e){}
+}
 async function sbLoadAll(){
   if(!sbClient||!sbUser)return false;
   try{
@@ -2948,6 +2958,12 @@ keyBtn.addEventListener("click",function(){
   AI_API_KEY=v;
   if(v){storageSet("ins_ai_api_key",v);alert("鍵を登録しました。カメラ読み取りが使えます。");}
   else{storageRemove("ins_ai_api_key");alert("鍵の登録を解除しました。");}
+  // サーバー(Supabase)にも保存（ログイン中なら、他の端末でも復元できる）
+  try{
+    if(sbClient&&sbUser){
+      sbClient.from("user_settings").upsert({user_id:sbUser.id,api_key:v||"",updated_at:new Date().toISOString()}).then(function(){},function(){});
+    }
+  }catch(e){}
   render();
 });
 ioWrap.appendChild(keyBtn);
@@ -3134,6 +3150,7 @@ function showLogin(){
       sbUser=r.data.user;SYNC_ON=true;
       setMsg("データを読み込み中...",false);
       await sbLoadAll();
+      await sbLoadApiKey();
       ov.remove();startApp();
     }catch(e){setMsg("エラー："+e.message,true);}
   });
@@ -3145,7 +3162,7 @@ function showLogin(){
     try{
       var r=await sbClient.auth.signUp({email:em,password:pw});
       if(r.error){setMsg("登録失敗："+r.error.message,true);return;}
-      if(r.data.session){sbUser=r.data.user;SYNC_ON=true;setMsg("登録完了。データ準備中...",false);await sbLoadAll();ov.remove();startApp();}
+      if(r.data.session){sbUser=r.data.user;SYNC_ON=true;setMsg("登録完了。データ準備中...",false);await sbLoadAll();await sbLoadApiKey();ov.remove();startApp();}
       else{setMsg("確認メールを送りました。メール内のリンクを押してから、ログインしてください。",false);}
     }catch(e){setMsg("エラー："+e.message,true);}
   });

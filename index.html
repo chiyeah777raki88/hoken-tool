@@ -879,7 +879,21 @@ return fetch(apiUrl,{method:"POST",headers:{"Content-Type":"application/json","a
 }).then(function(r){return r.json();})
 .then(function(data){
 lbl2.textContent="画像を選択（複数可）";fi.disabled=false;
-if(data.error){msgEl.textContent="APIエラー："+(data.error.message||"不明");msgEl.style.color="#c0392b";return;}
+if(data.error){
+  var em=(data.error.message||"")+" "+(data.error.type||"");
+  var emLow=em.toLowerCase();
+  if(emLow.indexOf("credit")>=0||emLow.indexOf("billing")>=0||emLow.indexOf("quota")>=0||emLow.indexOf("insufficient")>=0||emLow.indexOf("balance")>=0||emLow.indexOf("payment")>=0){
+    msgEl.textContent="鍵の残高が足りないようです。読み取りを続けるには、console.anthropic.com の「クレジット」で資金を追加してください。";
+    msgEl.style.color="#c0392b";
+    if(confirm("カメラ読み取り用の鍵の残高が足りないようです。\n\nconsole.anthropic.com の「クレジット」画面で資金を追加できます。\n\n今すぐその画面を開きますか？")){
+      try{window.open("https://console.anthropic.com/settings/billing","_blank");}catch(e){}
+    }
+  } else {
+    msgEl.textContent="APIエラー："+(data.error.message||"不明");
+    msgEl.style.color="#c0392b";
+  }
+  return;
+}
 if(!data.content||!data.content.length){msgEl.textContent="応答が空でした。";msgEl.style.color="#c0392b";return;}
 var txt=data.content.map(function(x){return x.text||"";}).join("");
 var jsonMatch=txt.match(/\{[\s\S]*\}/);

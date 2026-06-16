@@ -626,6 +626,26 @@ function sel(opts,val,cb){var e=document.createElement("select");e.style.width="
 function lbl(text,child){var l=el("label","fl");var s=el("span");s.textContent=text;l.appendChild(s);if(child)l.appendChild(child);return l;}
 // 生年月日・契約日 共通入力部品（西暦/和暦切替・自動移動・和暦表示）
 function seireki2wareki(y){y=+y;if(!y||y<1868)return "";if(y>=2019)return "令和"+(y-2018)+"年";if(y>=1989)return "平成"+(y-1988)+"年";if(y>=1926)return "昭和"+(y-1925)+"年";if(y>=1912)return "大正"+(y-1911)+"年";return "明治"+(y-1867)+"年";}
+function calcEnrollAge(pol){
+  var insuredDob="";
+  if(pol.insuredId&&pol.insuredId!=="other"){
+    var fm=state.family.filter(function(x){return x.id===pol.insuredId;})[0];
+    if(fm)insuredDob=fm.dob||"";
+  } else if(!pol.insuredId){
+    var self=state.family.filter(function(x){return x.relation==="本人";})[0]||state.family[0];
+    if(self)insuredDob=self.dob||"";
+  }
+  if(insuredDob&&pol.contractDate){
+    var d1=new Date(insuredDob), d2=new Date(pol.contractDate);
+    if(!isNaN(d1)&&!isNaN(d2)){
+      var a=d2.getFullYear()-d1.getFullYear();
+      var m=d2.getMonth()-d1.getMonth();
+      if(m<0||(m===0&&d2.getDate()<d1.getDate()))a--;
+      if(a>=0&&a<120)return a+"歳";
+    }
+  }
+  return "—";
+}
 function makeDobInput(initialVal,onChange){
   var wrap=el("div");wrap.style.cssText="display:flex;flex-direction:column;gap:4px;";
   var parts={y:"",m:"",d:""};
@@ -866,30 +886,12 @@ lbl("保険種類",sel(ITS.map(function(t){return{v:t,l:t};}),pol.insType,functi
 lbl("証券番号",inp("text",pol.policyNo,function(v){upd("policyNo",v);})),
 lbl("被保険者",sel([{v:"",l:"（契約者本人）"}].concat(state.family.map(function(fm){return{v:fm.id,l:fm.name||fm.relation};})).concat([{v:"other",l:"その他（手入力）"}]),pol.insuredId||"",function(v){upd("insuredId",v);render();})),
 (pol.insuredId==="other")?lbl("被保険者名（手入力）",inp("text",pol.insuredName||"",function(v){upd("insuredName",v);})):null,
-lbl("契約日",makeDobInput(pol.contractDate,function(v){upd("contractDate",v);render();})),
+lbl("契約日",makeDobInput(pol.contractDate,function(v){upd("contractDate",v);var ae=document.getElementById("enrollAge_"+pol.id);if(ae){ae.textContent=calcEnrollAge(pol);}})),
 (function(){
-  // 加入時年齢を自動計算（被保険者の生年月日と契約日から）
-  var insuredDob="";
-  if(pol.insuredId&&pol.insuredId!=="other"){
-    var fm=state.family.filter(function(x){return x.id===pol.insuredId;})[0];
-    if(fm)insuredDob=fm.dob||"";
-  } else if(!pol.insuredId){
-    var self=state.family.filter(function(x){return x.relation==="本人";})[0]||state.family[0];
-    if(self)insuredDob=self.dob||"";
-  }
-  var ageTxt="—";
-  if(insuredDob&&pol.contractDate){
-    var d1=new Date(insuredDob), d2=new Date(pol.contractDate);
-    if(!isNaN(d1)&&!isNaN(d2)){
-      var a=d2.getFullYear()-d1.getFullYear();
-      var m=d2.getMonth()-d1.getMonth();
-      if(m<0||(m===0&&d2.getDate()<d1.getDate()))a--;
-      if(a>=0&&a<120)ageTxt=a+"歳";
-    }
-  }
+  var ageTxt=calcEnrollAge(pol);
   var w=el("div");w.style.cssText="display:flex;flex-direction:column;";
   var l=el("label");l.textContent="加入時年齢（自動）";l.style.cssText="font-size:11px;color:#8a8a8a;margin-bottom:3px;";
-  var v=el("div");v.textContent=ageTxt;v.style.cssText="font-size:14px;font-weight:700;color:#1a2744;padding:7px 0;";
+  var v=el("div");v.id="enrollAge_"+pol.id;v.textContent=ageTxt;v.style.cssText="font-size:14px;font-weight:700;color:#1a2744;padding:7px 0;";
   w.appendChild(l);w.appendChild(v);return w;
 })(),
 lbl("保険料（"+pol.premUnit+"）",inp("number",pol.premAmount,function(v){upd("premAmount",+v);}))

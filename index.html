@@ -245,7 +245,7 @@ async function sbSaveList(){
 <script>
 var DRIVE_CLIENT_ID=storageGet("ins_gdrive_client_id")||"";
 var AI_API_KEY=storageGet("ins_ai_api_key")||"";
-var APP_VERSION="0617-0045";
+var APP_VERSION="0617-0110";
 var DRIVE_FILE_ID=storageGet("ins_gdrive_file_id")||"";
 var DRIVE_ACCESS_TOKEN="";
 var driveStatus="disconnected";
@@ -630,6 +630,7 @@ p.futureVals.forEach(function(row){if(row.age<=useAge){if(!best||row.age>=best.a
 if(!best)best=p.futureVals[0];
 if(best){
 var raw=rate==="1"?best.v1||0:rate==="5"?best.v5||0:rate==="6"?best.v6||0:best.v3||0;
+if(!(raw>0))raw=best.v3||best.v1||best.v5||best.v6||0;
 if(raw>0&&p.currency&&p.currency!=="JPY")return Math.round(raw*(p.exchangeRate||150)/10000*100)/100;
 return raw;
 }
@@ -1663,6 +1664,7 @@ var hasVarData=p.futureVals&&p.futureVals.length>0&&p.futureVals.some(function(r
 var hasRefund=p.refundVal>0&&p.refundAge>0;
 if(isVarType)return true;
 if(isPensionType)return true;
+if(hasVarData)return true; // 解約返戻金/将来予測の表がある保険（円建て終身等）も対象に
 if(hasRefund)return true;
 if(p.currentVal>0)return true;
 if(p.refundAge>0)return true; // include any policy with a refund age set
@@ -1676,7 +1678,7 @@ d.appendChild(nm);
 var it=el("span");it.style.color="#8a8a8a";it.textContent=p.insType;d.appendChild(it);
 if(p.refundVal>0&&p.refundAge>0){var s=el("span");s.style.color="#27ae60";s.innerHTML="概算受取: <strong>"+(+p.refundVal).toLocaleString()+"万円</strong>（"+p.refundAge+"歳時）";d.appendChild(s);}
 else if(p.currentVal>0){var s2=el("span");s2.style.color="#27ae60";s2.innerHTML="現在の積立: <strong>"+p.currentVal.toLocaleString()+"万円</strong>";d.appendChild(s2);}
-var sv2=sV(p);if(sv2>0){var s2=el("span");s2.innerHTML="将来予測("+scenRate+"%): <strong>"+sv2.toLocaleString()+"</strong>（"+(p.futureValAge||"?")+"歳）";d.appendChild(s2);}
+var sv2=sV(p);if(sv2>0){var s2=el("span");var isVarT=p.insType&&p.insType.indexOf("変額")>=0;var lblTxt=isVarT?("将来予測("+scenRate+"%): "):"解約返戻金: ";s2.innerHTML=lblTxt+"<strong>"+sv2.toLocaleString()+"</strong>（"+(p.futureValAge||"?")+"歳）";d.appendChild(s2);}
 if(p.annualPension>0){var jpy2=toJPY(p,p.annualPension);var s3=el("span");s3.innerHTML="年金: <strong>"+p.annualPension.toLocaleString()+(p.currency&&p.currency!=="JPY"?p.currency:"万円")+"</strong>"+(p.currency&&p.currency!=="JPY"?" → "+jpy2.toLocaleString()+"万円/年":"")+"（"+(p.pensionStartAge||"?")+"歳〜）";d.appendChild(s3);}
 if(p.refundVal>0){var s4=el("span");s4.innerHTML="還付金: <strong>"+p.refundVal.toLocaleString()+"万円</strong>（"+(p.refundAge||"?")+"歳）";d.appendChild(s4);}
 return d;
@@ -1691,7 +1693,7 @@ var db=el("button","btn br");db.style.cssText="height:32px;padding:0 10px;"+(ri=
 db.addEventListener("click",function(){extraRows.splice(ri,1);saveState();render();});row2.appendChild(db);erSection.appendChild(row2);
 });
 erSection.appendChild(btn("＋ 行追加","bg",function(){extraRows.push({name:"",amount:0,timing:""});saveState();render();}));
-cont.appendChild(sec("保険の老後関連受取額",null,insItems.concat([erSection])));
+cont.appendChild(sec("保険の資産価値（解約返戻金・積立・受取額）",null,insItems.concat([erSection])));
 function buildAccountSection(accounts,label,color){
 var wrap=el("div");
 function renderAccounts(){

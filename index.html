@@ -659,12 +659,14 @@ function makeDobInput(initialVal,onChange){
   // 入力欄の入れ物
   var inputRow=el("div");inputRow.style.cssText="display:flex;gap:6px;align-items:center;flex-wrap:wrap;";
   var warekiLbl=el("span");warekiLbl.style.cssText="font-size:11px;color:#7c3aed;font-weight:700;";
+  var seLbl=el("span");seLbl.style.cssText="font-size:11px;color:#7c3aed;font-weight:700;";
   function fire(){
     if(parts.y&&parts.m&&parts.d){
       var v=parts.y.padStart(4,"0")+"-"+String(parts.m).padStart(2,"0")+"-"+String(parts.d).padStart(2,"0");
       if(onChange)onChange(v);
     }
     warekiLbl.textContent=parts.y?seireki2wareki(parts.y):"";
+    seLbl.textContent=parts.y?"西暦"+parts.y+"年":"";
   }
   function numInput(val,maxLen,onFull,ph){
     var i=document.createElement("input");i.type="tel";i.value=val||"";i.maxLength=maxLen;i.placeholder=ph;
@@ -696,7 +698,7 @@ function makeDobInput(initialVal,onChange){
       inputRow.appendChild(gSel);inputRow.appendChild(gyI);inputRow.appendChild(el("span",null,"年"));
       inputRow.appendChild(wmI);inputRow.appendChild(el("span",null,"月"));
       inputRow.appendChild(wdI);inputRow.appendChild(el("span",null,"日"));
-      var seLbl=el("span");seLbl.style.cssText="font-size:11px;color:#7c3aed;font-weight:700;";seLbl.textContent=parts.y?"西暦"+parts.y+"年":"";
+      seLbl.textContent=parts.y?"西暦"+parts.y+"年":"";
       inputRow.appendChild(seLbl);
     }
   }
